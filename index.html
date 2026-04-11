@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 
+<!-- 📱 viewport (clave) -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
   body {
     margin: 0;
@@ -21,11 +24,13 @@
     z-index: 2;
   }
 
+  /* 🔥 responsive */
   #title {
-    font-size: 4rem;
+    font-size: clamp(2rem, 10vw, 4rem);
     letter-spacing: 0.2em;
     text-transform: lowercase;
     cursor: pointer;
+    padding: 20px; /* mejor para touch */
   }
 
   .letter {
@@ -46,9 +51,9 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
 
-    font-size: 2.2rem;
+    font-size: clamp(1.2rem, 5vw, 2.2rem);
     letter-spacing: 0.15em;
     text-transform: lowercase;
 
@@ -102,7 +107,6 @@ text.split("").forEach(char => {
   letters.push(createLetterObject(span));
 });
 
-// función para crear objetos de letra
 function createLetterObject(el) {
   return {
     el: el,
@@ -115,8 +119,9 @@ function createLetterObject(el) {
   };
 }
 
-// 💥 EXPLOSIÓN
-title.addEventListener("click", (e) => {
+// 💥 EXPLOSIÓN (click + touch)
+function explode(e) {
+  e.preventDefault();
   e.stopPropagation();
 
   if (exploded) return;
@@ -124,10 +129,9 @@ title.addEventListener("click", (e) => {
 
   title.style.pointerEvents = "none";
 
-  // dispersar letras existentes
   letters.forEach(l => {
-    l.x = (Math.random() - 0.5) * 700;
-    l.y = (Math.random() - 0.5) * 400;
+    l.x = (Math.random() - 0.5) * (window.innerWidth * 0.6);
+    l.y = (Math.random() - 0.5) * (window.innerHeight * 0.4);
 
     l.vx = (Math.random() - 0.5) * 10;
     l.vy = (Math.random() - 0.5) * 10;
@@ -137,7 +141,7 @@ title.addEventListener("click", (e) => {
     l.el.style.opacity = 0.2;
   });
 
-  // 👉 AGREGAR "huntr"
+  // huntr
   setTimeout(() => {
     extraText.split("").forEach(char => {
       const span = document.createElement("span");
@@ -171,18 +175,27 @@ title.addEventListener("click", (e) => {
   setTimeout(() => {
     document.getElementById("dates").classList.add("show");
   }, 800);
-});
+}
 
-// 🖱️ mouse
-let mouseX = 0;
-let mouseY = 0;
+// 👇 click + touch
+title.addEventListener("click", explode);
+title.addEventListener("touchstart", explode);
+
+// 🖱️ + 👆 input unificado
+let mouseX = window.innerWidth / 2;
+let mouseY = window.innerHeight / 2;
 
 document.addEventListener("mousemove", (e) => {
   mouseX = e.clientX;
   mouseY = e.clientY;
 });
 
-// 🎬 LOOP
+document.addEventListener("touchmove", (e) => {
+  mouseX = e.touches[0].clientX;
+  mouseY = e.touches[0].clientY;
+});
+
+// 🎬 LOOP optimizado
 function animate() {
   if (exploded) {
     letters.forEach(l => {
@@ -194,19 +207,19 @@ function animate() {
       const dy = ly - mouseY;
       const dist = Math.sqrt(dx * dx + dy * dy);
 
-      const radius = 150;
+      const radius = window.innerWidth < 600 ? 100 : 150;
 
       if (dist < radius) {
         const angle = Math.atan2(dy, dx);
         const force = (radius - dist) / radius;
 
-        l.vx += Math.cos(angle) * force * 6;
-        l.vy += Math.sin(angle) * force * 6;
+        l.vx += Math.cos(angle) * force * 5;
+        l.vy += Math.sin(angle) * force * 5;
       }
 
       l.floatT += l.floatSpeed;
-      const floatX = Math.sin(l.floatT) * 8;
-      const floatY = Math.cos(l.floatT) * 8;
+      const floatX = Math.sin(l.floatT) * 6;
+      const floatY = Math.cos(l.floatT) * 6;
 
       l.x += l.vx;
       l.y += l.vy;
@@ -214,9 +227,7 @@ function animate() {
       l.vx *= 0.93;
       l.vy *= 0.93;
 
-      l.el.style.transform = `
-        translate(${l.x + floatX}px, ${l.y + floatY}px)
-      `;
+      l.el.style.transform = `translate(${l.x + floatX}px, ${l.y + floatY}px)`;
     });
   }
 
