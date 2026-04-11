@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+
+<style>
+  body {
+    margin: 0;
+    background: black;
+    color: #d9d9d9;
+    font-family: Arial, Helvetica, sans-serif;
+    overflow: hidden;
+  }
+
+  .center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    z-index: 2;
+  }
+
+  #title {
+    font-size: 4rem;
+    letter-spacing: 0.2em;
+    text-transform: lowercase;
+    cursor: pointer;
+  }
+
+  .letter {
+    display: inline-block;
+    pointer-events: none;
+    will-change: transform;
+  }
+
+  .dates {
+    opacity: 0;
+    pointer-events: none;
+    
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+
+    font-size: 2.2rem;
+    letter-spacing: 0.15em;
+    text-transform: lowercase;
+
+    transition: opacity 1.2s ease;
+    z-index: 3;
+  }
+
+  .dates.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .dates a {
+    color: #d9d9d9;
+    text-decoration: none;
+    cursor: pointer;
+  }
+</style>
+</head>
+
+<body>
+
+<div class="center">
+  <div id="title"></div>
+</div>
+
+<div class="dates" id="dates">
+  <a href="https://www.masentrada.app/events/litigio-mar-del-plata-1505" target="_blank">mar del plata</a>
+  <a href="https://www.masentrada.app/events/litigio-1605-shakohuntreluneyperswaveleston" target="_blank">bahía blanca</a>
+  <a href="#">rosario, santa fe</a>
+  <a href="#">córdoba</a>
+</div>
+
+<script>
+const text = "eminencia tour";
+const extraText = "huntr";
+
+const title = document.getElementById("title");
+
+let letters = [];
+let exploded = false;
+
+// crear letras iniciales
+text.split("").forEach(char => {
+  const span = document.createElement("span");
+  span.classList.add("letter");
+  span.innerHTML = char === " " ? "&nbsp;" : char;
+
+  title.appendChild(span);
+
+  letters.push(createLetterObject(span));
+});
+
+// función para crear objetos de letra
+function createLetterObject(el) {
+  return {
+    el: el,
+    x: 0,
+    y: 0,
+    vx: 0,
+    vy: 0,
+    floatT: Math.random() * 100,
+    floatSpeed: Math.random() * 0.02 + 0.01
+  };
+}
+
+// 💥 EXPLOSIÓN
+title.addEventListener("click", (e) => {
+  e.stopPropagation();
+
+  if (exploded) return;
+  exploded = true;
+
+  title.style.pointerEvents = "none";
+
+  // dispersar letras existentes
+  letters.forEach(l => {
+    l.x = (Math.random() - 0.5) * 700;
+    l.y = (Math.random() - 0.5) * 400;
+
+    l.vx = (Math.random() - 0.5) * 10;
+    l.vy = (Math.random() - 0.5) * 10;
+
+    l.el.style.transition = "transform 2s cubic-bezier(0.22,1,0.36,1), opacity 1.5s ease";
+    l.el.style.transform = `translate(${l.x}px, ${l.y}px)`;
+    l.el.style.opacity = 0.2;
+  });
+
+  // 👉 AGREGAR "huntr"
+  setTimeout(() => {
+    extraText.split("").forEach(char => {
+      const span = document.createElement("span");
+      span.classList.add("letter");
+      span.innerHTML = char;
+
+      document.body.appendChild(span);
+
+      const obj = createLetterObject(span);
+
+      obj.x = (Math.random() - 0.5) * 400;
+      obj.y = (Math.random() - 0.5) * 200;
+      obj.vx = (Math.random() - 0.5) * 8;
+      obj.vy = (Math.random() - 0.5) * 8;
+
+      span.style.opacity = 0;
+      span.style.position = "absolute";
+      span.style.left = "50%";
+      span.style.top = "50%";
+      span.style.transform = "translate(-50%, -50%)";
+
+      setTimeout(() => {
+        span.style.transition = "opacity 1s ease";
+        span.style.opacity = 0.2;
+      }, 50);
+
+      letters.push(obj);
+    });
+  }, 500);
+
+  setTimeout(() => {
+    document.getElementById("dates").classList.add("show");
+  }, 800);
+});
+
+// 🖱️ mouse
+let mouseX = 0;
+let mouseY = 0;
+
+document.addEventListener("mousemove", (e) => {
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+});
+
+// 🎬 LOOP
+function animate() {
+  if (exploded) {
+    letters.forEach(l => {
+      const rect = l.el.getBoundingClientRect();
+      const lx = rect.left + rect.width / 2;
+      const ly = rect.top + rect.height / 2;
+
+      const dx = lx - mouseX;
+      const dy = ly - mouseY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      const radius = 150;
+
+      if (dist < radius) {
+        const angle = Math.atan2(dy, dx);
+        const force = (radius - dist) / radius;
+
+        l.vx += Math.cos(angle) * force * 6;
+        l.vy += Math.sin(angle) * force * 6;
+      }
+
+      l.floatT += l.floatSpeed;
+      const floatX = Math.sin(l.floatT) * 8;
+      const floatY = Math.cos(l.floatT) * 8;
+
+      l.x += l.vx;
+      l.y += l.vy;
+
+      l.vx *= 0.93;
+      l.vy *= 0.93;
+
+      l.el.style.transform = `
+        translate(${l.x + floatX}px, ${l.y + floatY}px)
+      `;
+    });
+  }
+
+  requestAnimationFrame(animate);
+}
+
+animate();
+</script>
+
+</body>
+</html>
